@@ -11,19 +11,18 @@ export const MOCK_PRODUCTS = [
     stock_status: "instock",
     manage_stock: true,
     in_stock: true,
-    permalink:
-      "https://staging13.keylargoscubadiving.com/product/christ-of-the-abyss-snorkeling-tour/",
+    permalink: "https://staging13.keylargoscubadiving.com/product/christ-of-the-abyss-snorkeling-tour/",
     status: "publish",
     categories: [
-      { id: 15, name: "Snorkeling Tours", slug: "snorkeling-tours" },
+      { id: 15, name: "Snorkeling Tours", slug: "snorkeling-tours" }
     ],
     images: [
       {
         src: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop",
-        alt: "Christ of the Abyss statue underwater",
-      },
+        alt: "Christ of the Abyss statue underwater"
+      }
     ],
-    attributes: [],
+    attributes: []
   },
   {
     id: 34451,
@@ -35,17 +34,18 @@ export const MOCK_PRODUCTS = [
     stock_status: "instock",
     manage_stock: true,
     in_stock: true,
-    permalink:
-      "https://staging13.keylargoscubadiving.com/product/molasses-reef-diving/",
+    permalink: "https://staging13.keylargoscubadiving.com/product/molasses-reef-diving/",
     status: "publish",
-    categories: [{ id: 16, name: "Dive Trips", slug: "dive-trips" }],
+    categories: [
+      { id: 16, name: "Dive Trips", slug: "dive-trips" }
+    ],
     images: [
       {
         src: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=300&fit=crop",
-        alt: "Coral reef diving",
-      },
+        alt: "Coral reef diving"
+      }
     ],
-    attributes: [],
+    attributes: []
   },
   {
     id: 34452,
@@ -57,19 +57,18 @@ export const MOCK_PRODUCTS = [
     stock_status: "instock",
     manage_stock: true,
     in_stock: true,
-    permalink:
-      "https://staging13.keylargoscubadiving.com/product/padi-open-water/",
+    permalink: "https://staging13.keylargoscubadiving.com/product/padi-open-water/",
     status: "publish",
     categories: [
-      { id: 17, name: "Dive Certifications", slug: "dive-certifications" },
+      { id: 17, name: "Dive Certifications", slug: "dive-certifications" }
     ],
     images: [
       {
         src: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
-        alt: "PADI certification course",
-      },
+        alt: "PADI certification course"
+      }
     ],
-    attributes: [],
+    attributes: []
   },
   {
     id: 34453,
@@ -81,19 +80,18 @@ export const MOCK_PRODUCTS = [
     stock_status: "instock",
     manage_stock: true,
     in_stock: true,
-    permalink:
-      "https://staging13.keylargoscubadiving.com/product/scubapro-mask-snorkel/",
+    permalink: "https://staging13.keylargoscubadiving.com/product/scubapro-mask-snorkel/",
     status: "publish",
     categories: [
-      { id: 18, name: "Diving Equipment", slug: "diving-equipment" },
+      { id: 18, name: "Diving Equipment", slug: "diving-equipment" }
     ],
     images: [
       {
         src: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop",
-        alt: "Diving mask and snorkel",
-      },
+        alt: "Diving mask and snorkel"
+      }
     ],
-    attributes: [],
+    attributes: []
   },
   {
     id: 34454,
@@ -105,30 +103,26 @@ export const MOCK_PRODUCTS = [
     stock_status: "instock",
     manage_stock: true,
     in_stock: true,
-    permalink:
-      "https://staging13.keylargoscubadiving.com/product/night-diving/",
+    permalink: "https://staging13.keylargoscubadiving.com/product/night-diving/",
     status: "publish",
-    categories: [{ id: 16, name: "Dive Trips", slug: "dive-trips" }],
+    categories: [
+      { id: 16, name: "Dive Trips", slug: "dive-trips" }
+    ],
     images: [
       {
         src: "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=400&h=300&fit=crop",
-        alt: "Night diving adventure",
-      },
+        alt: "Night diving adventure"
+      }
     ],
-    attributes: [],
-  },
+    attributes: []
+  }
 ];
 
 export const MOCK_CATEGORIES = [
   { id: 15, name: "Snorkeling Tours", slug: "snorkeling-tours", count: 5 },
   { id: 16, name: "Dive Trips", slug: "dive-trips", count: 8 },
-  {
-    id: 17,
-    name: "Dive Certifications",
-    slug: "dive-certifications",
-    count: 4,
-  },
-  { id: 18, name: "Diving Equipment", slug: "diving-equipment", count: 12 },
+  { id: 17, name: "Dive Certifications", slug: "dive-certifications", count: 4 },
+  { id: 18, name: "Diving Equipment", slug: "diving-equipment", count: 12 }
 ];
 
 export const MOCK_ORDERS = [
@@ -140,7 +134,7 @@ export const MOCK_ORDERS = [
     billing: {
       first_name: "John",
       last_name: "Smith",
-      email: "john.smith@email.com",
-    },
-  },
+      email: "john.smith@email.com"
+    }
+  }
 ];

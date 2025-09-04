@@ -47,7 +47,7 @@ function ErrorFallback({ error }: { error: Error }) {
 export default function SnorkelingToursTemplate({
   data: customData,
   loading: externalLoading = false,
-  productId,
+  productId = 34592,
 }: SnorkelingToursTemplateProps) {
   // Unified data state - no artificial loading since we have static data
   const [templateData, setTemplateData] = useState<TourData>(() => {

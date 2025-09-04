@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import BookingCalendar from "@/components/BookingCalendar";
+import WooInlineCalendar from "@/components/WooInlineCalendar";
 import DiveBookingModalSimple from "../components/DiveBookingModalSimple";
 import { type DiveTripData } from "../data";
 import {
@@ -37,7 +37,6 @@ export default function BookingSection({
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedPrice, setSelectedPrice] = useState(data.pricing.basePrice);
-const [isCalendarOpen, setCalendarOpen] = useState(false);
 
   // Calculate base pricing (gear and services will be handled in modal)
   const baseCost = diverCount * selectedPrice;
@@ -166,13 +165,13 @@ const [isCalendarOpen, setCalendarOpen] = useState(false);
                   <div className="absolute top-full mt-1 left-0 right-0 z-50">
                     <div className="bg-white rounded-lg shadow-lg border border-gray-200">
                       {!calendarError ? (
-                        <BookingCalendar
+                        <WooInlineCalendar
                           productId={productId}
-                          onDateTimeSelect={handleDateTimeSelect}
+                          onDateTimeSelect={(date, time, price) => {
+                            handleDateTimeSelect(date, time, price);
+                            setShowCalendarDropdown(false);
+                          }}
                           selectedDate={selectedDate}
-                          selectedTime={selectedTime}
-                            isOpen={isCalendarOpen}          // ✅ required
-  onClose={() => setCalendarOpen(false)}
                         />
                       ) : (
                         <div className="p-6 text-center">

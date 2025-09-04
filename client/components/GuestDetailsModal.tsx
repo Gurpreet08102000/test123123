@@ -61,6 +61,7 @@ interface GuestDetailsModalProps {
     min: string;
     max: string;
   }>;
+  personTypeCounts?: Array<{ id: number; count: number; name: string }>;
   onRentalGearUpdate?: (
     passengerIndex: number,
     productId: string,
@@ -85,6 +86,12 @@ interface PassengerInfo {
   rentalGear?: { [key: number]: boolean };
 }
 
+interface SnorkelerInfo {
+  firstName: string;
+  lastName: string;
+  age?: string;
+}
+
 export default function GuestDetailsModal({
   isOpen,
   onClose,
@@ -98,6 +105,7 @@ export default function GuestDetailsModal({
   totalPrice,
   customFormFields,
   personTypes,
+  personTypeCounts,
   onRentalGearUpdate,
   rentalGearSelections,
   productIdNumber,
@@ -114,7 +122,6 @@ export default function GuestDetailsModal({
     phone: "",
     location: "",
     specialRequests: "",
-    snorkelerNames: "",
   });
 
   const [isScreenLoading, setIsScreenLoading] = useState(false);
@@ -131,6 +138,39 @@ export default function GuestDetailsModal({
       bcdRental: false,
       fullGearRental: false,
       rentalGear: {},
+    })),
+  );
+
+  // Calculate total non-diver passengers count
+  const nonDiverCount = guestCount - (diverCount || 0);
+
+  // Function to get person type for a given passenger index
+  const getPersonTypeForPassengerIndex = (index: number) => {
+    if (!personTypeCounts || personTypeCounts.length === 0) {
+      return { id: 0, name: "Passenger" };
+    }
+
+    // Use personTypeCounts to determine which person type this passenger belongs to
+    let currentIndex = 0;
+    for (const personTypeCount of personTypeCounts) {
+      if (index < currentIndex + personTypeCount.count) {
+        return {
+          id: personTypeCount.id,
+          name: personTypeCount.name,
+        };
+      }
+      currentIndex += personTypeCount.count;
+    }
+
+    // Fallback
+    return personTypeCounts[0];
+  };
+
+  const [snorkelers, setSnorkelers] = useState<SnorkelerInfo[]>(
+    Array.from({ length: nonDiverCount }, () => ({
+      firstName: "",
+      lastName: "",
+      age: "",
     })),
   );
 
@@ -153,6 +193,18 @@ export default function GuestDetailsModal({
     );
   }, [diverCount]);
 
+  // Update snorkelers array when non-diver count changes
+  useEffect(() => {
+    const newNonDiverCount = guestCount - (diverCount || 0);
+    setSnorkelers(
+      Array.from({ length: newNonDiverCount }, () => ({
+        firstName: "",
+        lastName: "",
+        age: "",
+      })),
+    );
+  }, [guestCount, diverCount]);
+
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -167,6 +219,16 @@ export default function GuestDetailsModal({
     );
   };
 
+  const updateSnorkeler = (
+    index: number,
+    field: keyof SnorkelerInfo,
+    value: string,
+  ) => {
+    setSnorkelers((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)),
+    );
+  };
+
   const isFormValid = () => {
     // Check lead guest information
     const leadGuestValid =
@@ -175,17 +237,20 @@ export default function GuestDetailsModal({
       formData.email?.trim() &&
       formData.phone?.trim();
 
-    // If no additional passengers, only validate lead guest
-    if (!diverCount || diverCount === 0) {
-      return leadGuestValid;
-    }
+    // Validate additional passengers (divers) if any
+    const additionalPassengersValid =
+      !diverCount ||
+      diverCount === 0 ||
+      passengers
+        .slice(1)
+        .every((p) => p.firstName?.trim() && p.lastName?.trim());
 
-    // If diverCount > 0, we need to validate additional passengers (skip index 0 as it's the lead guest)
-    const additionalPassengersValid = passengers
-      .slice(1)
-      .every((p) => p.firstName?.trim() && p.lastName?.trim());
+    // Validate snorkelers if any
+    const snorkelersValid =
+      nonDiverCount === 0 ||
+      snorkelers.every((s) => s.firstName?.trim() && s.lastName?.trim());
 
-    return leadGuestValid && additionalPassengersValid;
+    return leadGuestValid && additionalPassengersValid && snorkelersValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -204,11 +269,35 @@ export default function GuestDetailsModal({
 
       if (diverCount && diverCount > 0) {
         // Only check additional passengers (skip index 0 as it's the lead guest)
+        const diverPersonType = personTypes?.find(
+          (pt) =>
+            pt.name.toLowerCase().includes("diver") ||
+            pt.name.toLowerCase().includes("# of divers"),
+        );
+        const diverTypeName = diverPersonType?.name || "Diver";
+
         passengers.slice(1).forEach((passenger, index) => {
           if (!passenger.firstName?.trim())
-            missingFields.push(`Passenger ${index + 2} First Name`);
+            missingFields.push(`${diverTypeName} ${index + 2} First Name`);
           if (!passenger.lastName?.trim())
-            missingFields.push(`Passenger ${index + 2} Last Name`);
+            missingFields.push(`${diverTypeName} ${index + 2} Last Name`);
+        });
+      }
+
+      // Check snorkelers
+      if (nonDiverCount > 0) {
+        const snorkelerPersonType = personTypes?.find(
+          (pt) =>
+            pt.name.toLowerCase().includes("snorkeler") ||
+            pt.name.toLowerCase().includes("# of snorkelers"),
+        );
+        const snorkelerTypeName = snorkelerPersonType?.name || "Snorkeler";
+
+        snorkelers.forEach((snorkeler, index) => {
+          if (!snorkeler.firstName?.trim())
+            missingFields.push(`${snorkelerTypeName} ${index + 1} First Name`);
+          if (!snorkeler.lastName?.trim())
+            missingFields.push(`${snorkelerTypeName} ${index + 1} Last Name`);
         });
       }
 
@@ -303,24 +392,24 @@ export default function GuestDetailsModal({
         // wc_bookings_field_persons_4696: diverCount, // Adjust ID as needed
         // wc_bookings_field_persons_4697: guestCount - diverCount, // Adjust ID as needed
 
-        // Persons fields (use dynamic IDs from personTypes)
+        // Persons fields (use personTypeCounts directly)
         ...(() => {
           const personFields: { [key: string]: number } = {};
 
-          if (personTypes) {
-            personTypes.forEach((personType) => {
-              if (
-                personType.name.toLowerCase() === "divers" ||
-                personType.name.toLowerCase() === "# of divers"
-              ) {
+          if (personTypeCounts && personTypeCounts.length > 0) {
+            // Use provided person type counts directly
+            personTypeCounts.forEach((personTypeCount) => {
+              personFields[`wc_bookings_field_persons_${personTypeCount.id}`] =
+                personTypeCount.count;
+            });
+          } else if (personTypes && personTypes.length > 0) {
+            // Fallback: if no personTypeCounts provided, distribute guests to first person type
+            personTypes.forEach((personType, index) => {
+              if (index === 0) {
                 personFields[`wc_bookings_field_persons_${personType.id}`] =
-                  diverCount || 0;
-              } else if (
-                personType.name.toLowerCase() === "snorkelers" ||
-                personType.name.toLowerCase() === "# of snorkelers"
-              ) {
-                personFields[`wc_bookings_field_persons_${personType.id}`] =
-                  guestCount - (diverCount || 0);
+                  guestCount;
+              } else {
+                personFields[`wc_bookings_field_persons_${personType.id}`] = 0;
               }
             });
           }
@@ -337,7 +426,35 @@ export default function GuestDetailsModal({
         // Location and special requests
         tmcp_textfield_3: formData.location || "",
         tmcp_textarea_4: formData.specialRequests || "",
-        tmcp_textarea_30: formData.snorkelerNames || "",
+        // Format passenger names based on person types
+        ...(() => {
+          // Check if person types contain divers or snorkelers
+          const hasDiversOrSnorkelers = personTypes?.some(
+            (pt) =>
+              pt.name.toLowerCase().includes("diver") ||
+              pt.name.toLowerCase().includes("snorkeler"),
+          );
+
+          // If person types are divers/snorkelers, use string format
+          if (hasDiversOrSnorkelers) {
+            return {
+              tmcp_textarea_30:
+                snorkelers
+                  .map((s) => `${s.firstName} ${s.lastName}`)
+                  .join("\n") || "",
+            };
+          } else {
+            // For other person types, use array format
+            const passengerFields: { [key: string]: string } = {};
+            snorkelers.forEach((s, index) => {
+              if (s.firstName && s.lastName) {
+                passengerFields[`tmcp_textfield_0[${index}]`] =
+                  `${s.firstName} ${s.lastName}`;
+              }
+            });
+            return passengerFields;
+          }
+        })(),
       };
 
       // Add additional passenger and rental gear data
@@ -431,7 +548,35 @@ export default function GuestDetailsModal({
         booking_diver_count: (diverCount || 0).toString(),
         booking_total_price: totalPrice?.toString() || "0",
         booking_rental_cost: rentalGearCost.toString(),
-        booking_snorkeler_names: formData.snorkelerNames || "",
+        // Format passenger names for booking metadata based on person types
+        ...(() => {
+          // Check if person types contain divers or snorkelers
+          const hasDiversOrSnorkelers = personTypes?.some(
+            (pt) =>
+              pt.name.toLowerCase().includes("diver") ||
+              pt.name.toLowerCase().includes("snorkeler"),
+          );
+
+          // If person types are divers/snorkelers, use string format
+          if (hasDiversOrSnorkelers) {
+            return {
+              booking_snorkeler_names:
+                snorkelers
+                  .map((s) => `${s.firstName} ${s.lastName}`)
+                  .join("\n") || "",
+            };
+          } else {
+            // For other person types, use array format
+            const passengerFields: { [key: string]: string } = {};
+            snorkelers.forEach((s, index) => {
+              if (s.firstName && s.lastName) {
+                passengerFields[`booking_passenger_names[${index}]`] =
+                  `${s.firstName} ${s.lastName}`;
+              }
+            });
+            return passengerFields;
+          }
+        })(),
       };
 
       // Complete booking data for logging and storage
@@ -444,7 +589,9 @@ export default function GuestDetailsModal({
           phone: formData.phone,
           location: formData.location,
           specialRequests: formData.specialRequests,
-          snorkelerNames: formData.snorkelerNames,
+          snorkelerNames: snorkelers
+            .map((s) => `${s.firstName} ${s.lastName}`)
+            .join("\n"),
         },
 
         // All passengers (divers) information
@@ -482,7 +629,9 @@ export default function GuestDetailsModal({
           basePrice: totalPrice - rentalGearCost,
           rentalGearCost: rentalGearCost,
           totalPrice: totalPrice,
-          snorkelerNames: formData.snorkelerNames,
+          snorkelerNames: snorkelers
+            .map((s) => `${s.firstName} ${s.lastName}`)
+            .join("\n"),
         },
 
         // WooCommerce data
@@ -820,7 +969,7 @@ export default function GuestDetailsModal({
             </Card>
 
             {/* Additional Passengers */}
-            {diverCount && diverCount > 0 && (
+            {(diverCount || 0) > 0 && passengers.length > 0 && (
               <Card className="mt-4">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -833,7 +982,16 @@ export default function GuestDetailsModal({
                     <div key={i} className="p-4 border rounded-lg bg-gray-50">
                       <h4 className="font-medium mb-3 flex items-center gap-2">
                         <User className="w-4 h-4" />
-                        Passenger {i + 1}
+                        {(() => {
+                          const diverPersonType = personTypes?.find(
+                            (pt) =>
+                              pt.name.toLowerCase().includes("diver") ||
+                              pt.name.toLowerCase().includes("# of divers"),
+                          );
+                          const personTypeName =
+                            diverPersonType?.name || "Diver";
+                          return `${personTypeName} ${i + 1}`;
+                        })()}
                         {i === 0 && (
                           <Badge variant="outline" className="text-xs">
                             Lead Guest (above)
@@ -1038,31 +1196,101 @@ export default function GuestDetailsModal({
               </Card>
             )}
 
-            {/* Snorkeler Names */}
-            <Card className="mt-4">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Snorkeler Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="text-sm font-semibold text-gray-700 uppercase">
-                    Enter All Snorkelers Name(s)
-                  </Label>
-                  <textarea
-                    className="w-full mt-2 p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    rows={4}
-                    placeholder="Enter the names of all snorkelers..."
-                    value={formData.snorkelerNames || ""}
-                    onChange={(e) =>
-                      updateField("snorkelerNames", e.target.value)
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            {/* Passenger Information */}
+            {nonDiverCount > 0 && (
+              <Card className="mt-4">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    {(() => {
+                      // Check if personTypes contains divers or snorkelers
+                      const hasDiversOrSnorkelers = personTypes?.some(
+                        (pt) =>
+                          pt.name.toLowerCase().includes("diver") ||
+                          pt.name.toLowerCase().includes("snorkeler"),
+                      );
+
+                      if (hasDiversOrSnorkelers) {
+                        return "Snorkeler Information";
+                      } else {
+                        return "Passenger Information";
+                      }
+                    })()}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {snorkelers.map((snorkeler, index) => (
+                    <div
+                      key={index}
+                      className="p-4 border rounded-lg bg-gray-50"
+                    >
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {(() => {
+                          const personType =
+                            getPersonTypeForPassengerIndex(index);
+                          const personTypeName =
+                            personType?.name || "Passenger";
+
+                          // Calculate the index within this person type
+                          let indexWithinType = index;
+                          if (personTypeCounts && personTypeCounts.length > 0) {
+                            let currentIndex = 0;
+                            for (const personTypeCount of personTypeCounts) {
+                              if (personType?.id === personTypeCount.id) {
+                                indexWithinType = index - currentIndex;
+                                break;
+                              }
+                              currentIndex += personTypeCount.count;
+                            }
+                          }
+
+                          return `${personTypeName} ${indexWithinType + 1}`;
+                        })()}
+                      </h4>
+                      <div className="grid md:grid-cols-3 gap-3">
+                        <div>
+                          <Label>First Name *</Label>
+                          <Input
+                            value={snorkeler.firstName}
+                            onChange={(e) =>
+                              updateSnorkeler(
+                                index,
+                                "firstName",
+                                e.target.value,
+                              )
+                            }
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label>Last Name *</Label>
+                          <Input
+                            value={snorkeler.lastName}
+                            onChange={(e) =>
+                              updateSnorkeler(index, "lastName", e.target.value)
+                            }
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label>Age</Label>
+                          <Input
+                            type="number"
+                            min="5"
+                            max="100"
+                            value={snorkeler.age}
+                            onChange={(e) =>
+                              updateSnorkeler(index, "age", e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Actions */}
             <div className="flex gap-4 pt-6">
