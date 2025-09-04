@@ -36,6 +36,7 @@ interface BookingCalendarProps {
   onDateTimeSelect: (date: string, time: string, price: number) => void;
   selectedDate?: string;
   selectedTime?: string;
+  lazyLoad?: boolean;
 }
 
 export default function BookingCalendar({
